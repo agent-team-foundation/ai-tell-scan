@@ -1,0 +1,9 @@
+.decorativeRule {
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  height: 2px;
+}
+
+.title {
+  color: #171717;
+  font-size: 4rem;
+}

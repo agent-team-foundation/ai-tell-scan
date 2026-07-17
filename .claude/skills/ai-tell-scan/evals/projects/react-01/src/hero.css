@@ -1,0 +1,7 @@
+.heroTitle {
+  color: transparent;
+  background: linear-gradient(90deg, #4f46e5, #a855f7, #ec4899);
+  background-clip: text;
+  font-size: 4rem;
+  font-weight: 700;
+}

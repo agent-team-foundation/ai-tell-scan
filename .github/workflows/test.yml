@@ -1,0 +1,31 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Scanner and evaluation tests
+        run: python3 -B .claude/skills/ai-tell-scan/scripts/test_ats.py -v
+      - name: Report and repository tests
+        run: python3 -B -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Precision gate
+        run: python3 -B .claude/skills/ai-tell-scan/scripts/evaluate.py --output /tmp/ats-eval-1.json
+      - name: Skill contract
+        run: python3 -B scripts/validate_skill.py
+      - name: Compile Python sources
+        run: python3 -m compileall -q .claude/skills/ai-tell-scan bin scripts tests

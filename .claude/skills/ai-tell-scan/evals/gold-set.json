@@ -1,0 +1,509 @@
+{
+  "schemaVersion": "ats-gold-1",
+  "corpus": {
+    "name": "AI Tell Scan 30-project precision corpus",
+    "version": "1.0.0",
+    "license": "Apache-2.0",
+    "projectCount": 30,
+    "composition": {
+      "positiveProjects": 15,
+      "hardNegativeProjects": 13,
+      "notApplicableProjects": 2,
+      "frameworks": {
+        "react": 17,
+        "nextjs": 13
+      },
+      "reviewNegativeProjects": 3
+    },
+    "privacy": "All projects are independently authored, fictional, and de-identified. They contain no third-party product names, user data, or copied source.",
+    "purpose": "Regression-test composite source signals and evidence locations before any live-repository claim.",
+    "limitations": "This compact controlled corpus measures rule behavior, not population prevalence. A separate real-repository sample is required for release evidence."
+  },
+  "thresholds": {
+    "confirmedPrecision": 0.9,
+    "candidatePrecision": 0.9
+  },
+  "annotationProtocol": {
+    "unit": "One rule id per project-level visible composition",
+    "positive": "All required primitives appear in one visible component/page composition and the combination matches the rule's trust-impact rationale.",
+    "negative": "One or more tempting primitives appear, but the composite, prominence, repetition, or semantic role is missing.",
+    "status": "React/Next projects with no scannable UI must be not-applicable rather than assigned a low score."
+  },
+  "projects": [
+    {
+      "id": "react-01",
+      "path": "projects/react-01",
+      "expectedStatus": "needs-review",
+      "annotation": "Large h1 combines imported static CSS for a multicolor gradient, clipping, transparent text, and display scale.",
+      "framework": "react",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.gradient-display-heading",
+          "file": "src/App.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.gradient-display-heading",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "react-02",
+      "path": "projects/react-02",
+      "expectedStatus": "needs-review",
+      "annotation": "Tall centered hero combines primary message/CTA with an absolute blurred multicolor layer.",
+      "framework": "react",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.aurora-centered-hero",
+          "file": "src/App.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.aurora-centered-hero",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "next-03",
+      "path": "projects/next-03",
+      "expectedStatus": "needs-review",
+      "annotation": "Fixed top navigation combines capsule radius, translucency, blur, frame, and action.",
+      "framework": "nextjs",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.glass-floating-nav",
+          "file": "app/page.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.glass-floating-nav",
+          "file": "app/page.tsx"
+        }
+      ]
+    },
+    {
+      "id": "react-04",
+      "path": "projects/react-04",
+      "expectedStatus": "needs-review",
+      "annotation": "Three uniform feature cards each lead with a rounded tinted icon tile.",
+      "framework": "react",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.icon-card-triptych",
+          "file": "src/App.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.icon-card-triptych",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "next-05",
+      "path": "projects/next-05",
+      "expectedStatus": "needs-review",
+      "annotation": "Three distinct sections repeat uppercase tracked micro-labels immediately above h2 headings.",
+      "framework": "nextjs",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.repeated-section-kickers",
+          "file": "app/page.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.repeated-section-kickers",
+          "file": "app/page.tsx"
+        }
+      ]
+    },
+    {
+      "id": "react-06",
+      "path": "projects/react-06",
+      "expectedStatus": "needs-review",
+      "annotation": "Three-column proof row uses three ungrounded, rounded launch claims.",
+      "framework": "react",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.round-metric-proof-row",
+          "file": "src/App.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.round-metric-proof-row",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "react-07",
+      "path": "projects/react-07",
+      "expectedStatus": "needs-review",
+      "annotation": "A marketing page repeats four glass panels over a gradient atmosphere.",
+      "framework": "react",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.glass-card-field",
+          "file": "src/App.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.glass-card-field",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "next-08",
+      "path": "projects/next-08",
+      "expectedStatus": "needs-review",
+      "annotation": "Capsules span actions, field, badges, status, and avatar roles.",
+      "framework": "nextjs",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.pill-role-overload",
+          "file": "app/page.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.pill-role-overload",
+          "file": "app/page.tsx"
+        }
+      ]
+    },
+    {
+      "id": "react-09",
+      "path": "projects/react-09",
+      "expectedStatus": "needs-review",
+      "annotation": "Four actions repeat transition-all with the same scale/lift hover formula.",
+      "framework": "react",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.spring-hover-everywhere",
+          "file": "src/App.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.spring-hover-everywhere",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "next-10",
+      "path": "projects/next-10",
+      "expectedStatus": "needs-review",
+      "annotation": "Three uniform cards use three independent same-family surface/foreground washes.",
+      "framework": "nextjs",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.multicolor-card-wash",
+          "file": "app/page.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.multicolor-card-wash",
+          "file": "app/page.tsx"
+        }
+      ]
+    },
+    {
+      "id": "react-11",
+      "path": "projects/react-11",
+      "expectedStatus": "needs-review",
+      "annotation": "Positive overlap case: atmospheric centered hero and clipped gradient h1 both stand independently.",
+      "framework": "react",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.aurora-centered-hero",
+          "file": "src/App.tsx"
+        },
+        {
+          "ruleId": "ats.gradient-display-heading",
+          "file": "src/App.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.aurora-centered-hero",
+          "file": "src/App.tsx"
+        },
+        {
+          "ruleId": "ats.gradient-display-heading",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "next-12",
+      "path": "projects/next-12",
+      "expectedStatus": "needs-review",
+      "annotation": "Positive overlap case: glass nav and three-role capsule overload.",
+      "framework": "nextjs",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.glass-floating-nav",
+          "file": "app/page.tsx"
+        },
+        {
+          "ruleId": "ats.pill-role-overload",
+          "file": "app/page.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.glass-floating-nav",
+          "file": "app/page.tsx"
+        },
+        {
+          "ruleId": "ats.pill-role-overload",
+          "file": "app/page.tsx"
+        }
+      ]
+    },
+    {
+      "id": "react-13",
+      "path": "projects/react-13",
+      "expectedStatus": "needs-review",
+      "annotation": "Positive overlap case: icon-tile triptych also washes each card in a separate hue.",
+      "framework": "react",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.icon-card-triptych",
+          "file": "src/App.tsx"
+        },
+        {
+          "ruleId": "ats.multicolor-card-wash",
+          "file": "src/App.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.icon-card-triptych",
+          "file": "src/App.tsx"
+        },
+        {
+          "ruleId": "ats.multicolor-card-wash",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "next-14",
+      "path": "projects/next-14",
+      "expectedStatus": "needs-review",
+      "annotation": "Positive overlap case: repeated kickers surround an ungrounded round metric row.",
+      "framework": "nextjs",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.repeated-section-kickers",
+          "file": "app/page.tsx"
+        },
+        {
+          "ruleId": "ats.round-metric-proof-row",
+          "file": "app/page.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.repeated-section-kickers",
+          "file": "app/page.tsx"
+        },
+        {
+          "ruleId": "ats.round-metric-proof-row",
+          "file": "app/page.tsx"
+        }
+      ]
+    },
+    {
+      "id": "react-15",
+      "path": "projects/react-15",
+      "expectedStatus": "needs-review",
+      "annotation": "Positive overlap case: repeated glass panels contain four identical motion treatments.",
+      "framework": "react",
+      "confirmedCandidates": [
+        {
+          "ruleId": "ats.glass-card-field",
+          "file": "src/App.tsx"
+        },
+        {
+          "ruleId": "ats.spring-hover-everywhere",
+          "file": "src/App.tsx"
+        }
+      ],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.glass-card-field",
+          "file": "src/App.tsx"
+        },
+        {
+          "ruleId": "ats.spring-hover-everywhere",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "react-16",
+      "path": "projects/react-16",
+      "expectedStatus": "needs-review",
+      "annotation": "Context-review negative: the gradient display heading is the product registered wordmark, with an explicit identity rationale.",
+      "framework": "react",
+      "confirmedCandidates": [],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.gradient-display-heading",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "next-17",
+      "path": "projects/next-17",
+      "expectedStatus": "needs-review",
+      "annotation": "Context-review negative: the round-looking metrics carry a visible audit date and linked methodology.",
+      "framework": "nextjs",
+      "confirmedCandidates": [],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.round-metric-proof-row",
+          "file": "app/page.tsx"
+        }
+      ]
+    },
+    {
+      "id": "react-18",
+      "path": "projects/react-18",
+      "expectedStatus": "needs-review",
+      "annotation": "Context-review negative: identical hover motion is the explicit subject of a motion-comparison playground.",
+      "framework": "react",
+      "confirmedCandidates": [],
+      "expectedCandidates": [
+        {
+          "ruleId": "ats.spring-hover-everywhere",
+          "file": "src/App.tsx"
+        }
+      ]
+    },
+    {
+      "id": "next-19",
+      "path": "projects/next-19",
+      "expectedStatus": "completed",
+      "annotation": "Hard negative: three pricing cards contain no icon-tile pattern or per-card accent wash.",
+      "framework": "nextjs",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "react-20",
+      "path": "projects/react-20",
+      "expectedStatus": "completed",
+      "annotation": "Hard negative: one useful editorial kicker is not repeated section chrome.",
+      "framework": "react",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "next-21",
+      "path": "projects/next-21",
+      "expectedStatus": "completed",
+      "annotation": "Hard negative: specific odd metrics include measurement windows/sources.",
+      "framework": "nextjs",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "react-22",
+      "path": "projects/react-22",
+      "expectedStatus": "completed",
+      "annotation": "Hard negative: glass panels are an explicit analytics dashboard data surface.",
+      "framework": "react",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "next-23",
+      "path": "projects/next-23",
+      "expectedStatus": "completed",
+      "annotation": "Hard negative: many pills serve one tag role and do not flatten unrelated affordances.",
+      "framework": "nextjs",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "react-24",
+      "path": "projects/react-24",
+      "expectedStatus": "completed",
+      "annotation": "Hard negative: two animated controls do not establish a universal motion formula.",
+      "framework": "react",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "next-25",
+      "path": "projects/next-25",
+      "expectedStatus": "completed",
+      "annotation": "Hard negative: semantic status colors appear in a flex row, not a generic feature-card grid.",
+      "framework": "nextjs",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "next-26",
+      "path": "projects/next-26",
+      "expectedStatus": "not-applicable",
+      "annotation": "Next.js package contains only an API route and must not receive a UI score.",
+      "framework": "nextjs",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "react-27",
+      "path": "projects/react-27",
+      "expectedStatus": "completed",
+      "annotation": "Dynamic class reference is outside the literal static-analysis contract and contains no tell.",
+      "framework": "react",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "react-28",
+      "path": "projects/react-28",
+      "expectedStatus": "not-applicable",
+      "annotation": "A story-only visual gallery is excluded; the shipped source has no UI component.",
+      "framework": "react",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "next-29",
+      "path": "projects/next-29",
+      "expectedStatus": "completed",
+      "annotation": "Unrelated CSS gradient rule is not linked to the h1 and must not be joined across selectors.",
+      "framework": "nextjs",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    },
+    {
+      "id": "react-30",
+      "path": "projects/react-30",
+      "expectedStatus": "completed",
+      "annotation": "Blurred sticky nav remains a rectangular high-opacity bar without capsule/shadow layering.",
+      "framework": "react",
+      "confirmedCandidates": [],
+      "expectedCandidates": []
+    }
+  ]
+}

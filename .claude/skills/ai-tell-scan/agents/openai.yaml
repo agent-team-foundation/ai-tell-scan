@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Tell Scan"
+  short_description: "Find high-confidence AI-template UI tells before launch"
+  default_prompt: "Use $ai-tell-scan to scan this React or Next.js repository for visible AI-template tells and return the smallest credible fixes."
