@@ -1738,6 +1738,8 @@ def _rescan_summary(
     baseline: dict[str, object],
     current: dict[str, object],
 ) -> dict[str, object]:
+    validate_final_report(baseline)
+    validate_final_report(current)
     baseline_tells = _validated_finalized_tells(baseline)
     current_tells = _validated_finalized_tells(current)
     baseline_target = baseline.get("target")

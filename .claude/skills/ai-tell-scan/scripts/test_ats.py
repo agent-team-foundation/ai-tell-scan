@@ -688,6 +688,11 @@ class AiTellScanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "internally inconsistent"):
             finalize(current_report, current_review, baseline=baseline)
 
+        baseline = reviewed(scan(PROJECTS / "react-01"))
+        baseline["target"].pop("sourceDigest")
+        with self.assertRaisesRegex(ValueError, "sourceDigest"):
+            finalize(current_report, current_review, baseline=baseline)
+
     def test_rescan_compares_all_confirmed_candidates_not_only_top_three(self) -> None:
         candidate_report = scan(PROJECTS / "react-13")
         candidates = candidate_report["candidates"]
