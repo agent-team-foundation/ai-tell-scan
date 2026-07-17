@@ -1565,10 +1565,14 @@ def _validate_candidate_core(candidate: dict[str, object]) -> None:
 
 
 def _validated_hosted_repository_source(report: dict[str, object]) -> str | None:
+    has_repository = "repository" in report
+    has_generated_at = "generatedAt" in report
+    if not has_repository and not has_generated_at:
+        return None
+    if not has_repository or not has_generated_at:
+        raise ValueError("Hosted report metadata must include repository and generatedAt.")
     repository = report.get("repository")
     generated_at = report.get("generatedAt")
-    if repository is None and generated_at is None:
-        return None
     if not isinstance(repository, dict) or set(repository) != {"source"}:
         raise ValueError("Hosted report repository metadata is missing or invalid.")
     source = repository.get("source")
@@ -1656,9 +1660,9 @@ def _validated_finalized_tells(report: dict[str, object]) -> list[dict[str, obje
 
 
 def _validate_rescan_shape(report: dict[str, object]) -> None:
-    rescan = report.get("rescan")
-    if rescan is None:
+    if "rescan" not in report:
         return
+    rescan = report.get("rescan")
     if not isinstance(rescan, dict):
         raise ValueError("Report rescan metadata is invalid.")
     if "baselineSourceDigest" not in rescan:
@@ -1676,6 +1680,12 @@ def _validate_rescan_shape(report: dict[str, object]) -> None:
             if not isinstance(tell, dict):
                 raise ValueError(f"Report rescan {field} list is invalid.")
             _validate_candidate_core(tell)
+            if "disposition" in tell and tell.get("disposition") not in {
+                "pending",
+                "confirmed",
+                "rejected",
+            }:
+                raise ValueError(f"Report rescan {field} disposition is invalid.")
             rationale = tell.get("reviewRationale")
             if not isinstance(rationale, str) or len(rationale.strip()) < 12:
                 raise ValueError(f"Report rescan {field} rationale is invalid.")

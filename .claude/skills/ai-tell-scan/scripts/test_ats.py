@@ -172,6 +172,25 @@ class AiTellScanTests(unittest.TestCase):
                     }
                 }
             ),
+            "null rescan": lambda report: report.update({"rescan": None}),
+            "null hosted metadata": lambda report: report.update(
+                {"repository": None}
+            ),
+            "invalid rescan disposition": lambda report: report.update(
+                {
+                    "rescan": {
+                        "baselineSourceDigest": report["target"]["sourceDigest"],
+                        "resolved": [],
+                        "persisted": [
+                            {
+                                **report["tells"][0],
+                                "disposition": "invalid",
+                            }
+                        ],
+                        "introduced": [],
+                    }
+                }
+            ),
         }
 
         for label, mutate in mutations.items():
@@ -179,7 +198,7 @@ class AiTellScanTests(unittest.TestCase):
                 report = json.loads(json.dumps(valid))
                 mutate(report)
                 with self.assertRaisesRegex(
-                    ValueError, "target|framework|scan|review|summary|rescan"
+                    ValueError, "target|framework|scan|review|summary|rescan|Hosted"
                 ):
                     validate_final_report(report)
 
