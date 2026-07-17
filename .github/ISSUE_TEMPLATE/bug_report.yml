@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible scanner, report, or repository-contract defect
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include secrets, private source, or vulnerability details. Use the Security tab for suspected security defects.
+  - type: input
+    id: revision
+    attributes:
+      label: Affected revision
+      description: Exact AI Tell Scan commit or tag.
+      placeholder: 40-character commit SHA
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal public or fictional input plus exact commands.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: Include status, rule id, file:line, and sanitized error output when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: target
+    attributes:
+      label: Target data classification
+      options:
+        - Fictional minimal reproduction
+        - Public repository
+        - No target repository involved
+    validations:
+      required: true

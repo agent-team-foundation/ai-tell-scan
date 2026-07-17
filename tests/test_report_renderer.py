@@ -303,6 +303,37 @@ class ReportRendererTests(unittest.TestCase):
             "https://github.com/agent-team-foundation/ai-tell-scan/schemas/ats-1.schema.json",
         )
 
+    def test_public_repository_documentation_baseline_is_complete(self) -> None:
+        english = (
+            "README.md",
+            "CONTRIBUTING.md",
+            "DEVELOPMENT.md",
+            "CODE_OF_CONDUCT.md",
+            "SECURITY.md",
+        )
+        translations = tuple(name.replace(".md", ".zh-CN.md") for name in english)
+        for name in (*english, *translations, "LICENSE"):
+            with self.subTest(document=name):
+                self.assertTrue((ROOT / name).is_file())
+
+        for name, canonical in zip(translations, english, strict=True):
+            content = (ROOT / name).read_text(encoding="utf-8")
+            with self.subTest(translation=name):
+                self.assertIn(f"Canonical source: [./{canonical}]", content)
+                self.assertRegex(content, r"Last synced with: \d{4}-\d{2}-\d{2}")
+
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("[简体中文](README.zh-CN.md)", readme)
+        for path in (
+            ".github/CODEOWNERS",
+            ".github/PULL_REQUEST_TEMPLATE.md",
+            ".github/ISSUE_TEMPLATE/bug_report.yml",
+            ".github/ISSUE_TEMPLATE/feature_request.yml",
+            ".github/ISSUE_TEMPLATE/config.yml",
+        ):
+            with self.subTest(collaboration_file=path):
+                self.assertTrue((ROOT / path).is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

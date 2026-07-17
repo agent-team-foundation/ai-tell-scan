@@ -1,5 +1,7 @@
 # AI Tell Scan
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 Evidence-first source review for the compound UI defaults that can make a
 React or Next.js product feel generic. AI Tell Scan returns at most three
 context-confirmed findings with `file:line` evidence. It does not infer AI
@@ -104,5 +106,8 @@ python3 -B .claude/skills/ai-tell-scan/scripts/evaluate.py \
 python3 -B scripts/validate_skill.py
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for rule-change requirements. Licensed
-under Apache-2.0.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for the complete local workflow and
+[CONTRIBUTING.md](CONTRIBUTING.md) for rule-change and review requirements.
+Community participation follows [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and
+private vulnerability reports follow [SECURITY.md](SECURITY.md). Licensed under
+Apache-2.0.
