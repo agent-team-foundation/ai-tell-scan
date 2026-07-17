@@ -815,6 +815,19 @@ def _aurora_centered_hero(index: ScanIndex) -> list[Candidate]:
         for element in index.elements_for_file(source):
             if element.tag not in {"div", "header", "main", "section"}:
                 continue
+            own_surface = element.surface
+            centered_hint = "text-center" in own_surface or _has_any(
+                own_surface, (r"items-center", r"justify-center")
+            )
+            tall_hint = _has_any(
+                own_surface,
+                (r"min-h-(?:screen|\[\d+vh\])", r"h-screen", r"py-(?:2[048]|3[02])"),
+            )
+            # Parent/child compositions remain eligible when either side owns
+            # one required layout primitive. Unrelated generic containers do
+            # not consume a 120-line source window on large repositories.
+            if not centered_hint and not tall_hint:
+                continue
             nearby = budget.window(source, element.line, 3, 120).lower()
             surface = f"{element.surface} {nearby}"
             centered = "text-center" in surface and _has_any(

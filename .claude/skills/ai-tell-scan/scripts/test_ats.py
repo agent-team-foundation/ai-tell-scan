@@ -303,6 +303,46 @@ class AiTellScanTests(unittest.TestCase):
                 {candidate["ruleId"] for candidate in report["candidates"]},
             )
 
+    def test_representative_large_repo_completes_within_rule_budgets(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "package.json").write_text(
+                json.dumps({"dependencies": {"react": "19.0.0"}}),
+                encoding="utf-8",
+            )
+            generic_elements = "\n".join(
+                f'      <div className="repository-row row-{index}">Row {index}</div>'
+                for index in range(60)
+            )
+            for index in range(244):
+                (root / f"View{index}.tsx").write_text(
+                    """export function View() {
+  return (
+    <main className="repository-shell">
+"""
+                    + generic_elements
+                    + """
+    </main>
+  );
+}
+""",
+                    encoding="utf-8",
+                )
+            styles = root / "styles"
+            styles.mkdir()
+            for index in range(753):
+                (styles / f"layer-{index}.css").write_text(
+                    f".layer-{index} {{ display: block; }}\n",
+                    encoding="utf-8",
+                )
+
+            report = scan(root)
+
+            self.assertEqual(report["scan"]["filesExamined"], 998)
+            self.assertEqual(report["scan"]["uiFilesExamined"], 244)
+            self.assertEqual(report["scan"]["status"], "completed")
+            self.assertEqual(report["summary"]["candidateCount"], 0)
+
     def test_output_paths_are_create_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
