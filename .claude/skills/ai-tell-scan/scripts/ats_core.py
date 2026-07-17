@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import re
+from bisect import bisect_left, bisect_right
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -35,6 +36,9 @@ MAX_TOTAL_SOURCE_LINES = 1_000_000
 MAX_INDEXED_CSS_BLOCKS = 100_000
 MAX_INDEXED_ELEMENTS = 100_000
 MAX_CANDIDATES = 10_000
+MAX_RULE_ANCHORS = 2_000
+MAX_RULE_RANGE_WORK = 10_000
+MAX_RULE_WINDOW_CHARS = 2_000_000
 HOSTED_REPOSITORY_RE = re.compile(
     r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
 )
@@ -157,16 +161,61 @@ class RuleDefinition:
 
 
 @dataclass
+class RuleWorkBudget:
+    anchors: int = 0
+    range_elements: int = 0
+    window_chars: int = 0
+
+    def charge_anchor(self) -> None:
+        self.anchors += 1
+        if self.anchors > MAX_RULE_ANCHORS:
+            raise ValueError(
+                f"Rule anchor limit exceeded ({MAX_RULE_ANCHORS}); narrow the scan root."
+            )
+
+    def charge_range(self, elements: tuple[Element, ...]) -> None:
+        self.range_elements += len(elements)
+        if self.range_elements > MAX_RULE_RANGE_WORK:
+            raise ValueError(
+                "Rule range work limit exceeded "
+                f"({MAX_RULE_RANGE_WORK}); narrow the scan root."
+            )
+
+    def window(
+        self, source: SourceFile, line: int, before: int, after: int
+    ) -> str:
+        value = _window(source, line, before, after)
+        self.window_chars += len(value)
+        if self.window_chars > MAX_RULE_WINDOW_CHARS:
+            raise ValueError(
+                "Rule source-window work limit exceeded "
+                f"({MAX_RULE_WINDOW_CHARS}); narrow the scan root."
+            )
+        return value
+
+
+@dataclass
 class ScanIndex:
     root: Path
     files: list[SourceFile]
     ui_files: list[SourceFile]
     elements: list[Element]
+    elements_by_file: dict[str, tuple[Element, ...]]
+    element_lines_by_file: dict[str, tuple[int, ...]]
     frameworks: list[str]
     css_classes: dict[str, list[CssBlock]]
 
-    def elements_for_file(self, source: SourceFile) -> list[Element]:
-        return [element for element in self.elements if element.file == source]
+    def elements_for_file(self, source: SourceFile) -> tuple[Element, ...]:
+        return self.elements_by_file.get(source.relative_path, ())
+
+    def elements_in_line_range(
+        self, source: SourceFile, start: int, end: int
+    ) -> tuple[Element, ...]:
+        elements = self.elements_for_file(source)
+        lines = self.element_lines_by_file.get(source.relative_path, ())
+        left = bisect_left(lines, start)
+        right = bisect_right(lines, end)
+        return elements[left:right]
 
 
 RULES: dict[str, RuleDefinition] = {
@@ -566,11 +615,25 @@ def build_index(root: Path, max_files: int = 5000) -> ScanIndex:
     ui_candidates = [source for source in files if _is_ui_source(source)]
     ui_files, frameworks = _scope_react_ui_files(resolved, files, ui_candidates)
     css_classes = _css_index(files)
+    elements = _elements(ui_files, css_classes)
+    mutable_by_file: dict[str, list[Element]] = {}
+    for element in elements:
+        mutable_by_file.setdefault(element.file.relative_path, []).append(element)
+    elements_by_file = {
+        path: tuple(sorted(items, key=lambda item: item.line))
+        for path, items in mutable_by_file.items()
+    }
+    element_lines_by_file = {
+        path: tuple(item.line for item in items)
+        for path, items in elements_by_file.items()
+    }
     return ScanIndex(
         root=resolved,
         files=files,
         ui_files=ui_files,
-        elements=_elements(ui_files, css_classes),
+        elements=elements,
+        elements_by_file=elements_by_file,
+        element_lines_by_file=element_lines_by_file,
         frameworks=frameworks,
         css_classes=css_classes,
     )
@@ -747,19 +810,23 @@ def _gradient_display_heading(index: ScanIndex) -> list[Candidate]:
 
 def _aurora_centered_hero(index: ScanIndex) -> list[Candidate]:
     candidates: list[Candidate] = []
+    budget = RuleWorkBudget()
     for source in index.ui_files:
         for element in index.elements_for_file(source):
             if element.tag not in {"div", "header", "main", "section"}:
                 continue
-            nearby = _window(source, element.line, 3, 120).lower()
-            surface = f"{element.surface} {nearby}"
-            centered = "text-center" in surface and _has_any(
-                surface, (r"items-center", r"justify-center")
+            own_surface = element.surface
+            centered = "text-center" in own_surface and _has_any(
+                own_surface, (r"items-center", r"justify-center")
             )
             tall = _has_any(
-                surface,
+                own_surface,
                 (r"min-h-(?:screen|\[\d+vh\])", r"h-screen", r"py-(?:2[048]|3[02])"),
             )
+            if not centered or not tall:
+                continue
+            nearby = budget.window(source, element.line, 3, 120).lower()
+            surface = f"{own_surface} {nearby}"
             atmospheric = _has_any(
                 surface,
                 (r"blur-(?:2xl|3xl|\[)", r"filter\s*:\s*blur", r"radial-gradient"),
@@ -826,10 +893,11 @@ def _aurora_centered_hero(index: ScanIndex) -> list[Candidate]:
 
 def _glass_floating_nav(index: ScanIndex) -> list[Candidate]:
     candidates: list[Candidate] = []
+    budget = RuleWorkBudget()
     for element in index.elements:
         if element.tag != "nav":
             continue
-        nearby = _window(element.file, element.line, 2, 45).lower()
+        nearby = budget.window(element.file, element.line, 2, 45).lower()
         surface = f"{element.surface} {nearby}"
         anchored = _has_any(
             surface,
@@ -913,14 +981,11 @@ def _glass_floating_nav(index: ScanIndex) -> list[Candidate]:
     return candidates
 
 
-def _card_elements_in_range(
-    index: ScanIndex, source: SourceFile, start: int, end: int
-) -> list[Element]:
+def _card_elements_in_range(elements: Iterable[Element]) -> list[Element]:
     return [
         element
-        for element in index.elements_for_file(source)
-        if start <= element.line <= end
-        and _has_any(
+        for element in elements
+        if _has_any(
             element.surface, (r"rounded-(?:xl|2xl|3xl)", r"border-radius\s*:\s*[1-9]\d")
         )
         and _has_any(
@@ -931,21 +996,23 @@ def _card_elements_in_range(
 
 def _icon_card_triptych(index: ScanIndex) -> list[Candidate]:
     candidates: list[Candidate] = []
+    budget = RuleWorkBudget()
     for source in index.ui_files:
         for grid in index.elements_for_file(source):
             if not _has_any(
                 grid.surface, (r"grid-cols-3", r"grid-template-columns\s*:\s*repeat\(3")
             ):
                 continue
+            budget.charge_anchor()
             end = grid.line + 190
-            nearby = _window(source, grid.line, 2, 190)
-            cards = _card_elements_in_range(index, source, grid.line, end)
+            range_elements = index.elements_in_line_range(source, grid.line, end)
+            budget.charge_range(range_elements)
+            nearby = budget.window(source, grid.line, 2, 190)
+            cards = _card_elements_in_range(range_elements)
             headings = len(re.findall(r"<h[234]\b", nearby, re.IGNORECASE))
             descriptions = len(re.findall(r"<p\b", nearby, re.IGNORECASE))
             icon_tiles: list[Element] = []
-            for element in index.elements_for_file(source):
-                if not grid.line <= element.line <= end:
-                    continue
+            for element in range_elements:
                 square = _has_any(
                     element.surface,
                     (r"(?:w|size)-(?:8|9|10|11|12)", r"width\s*:\s*(?:3[2-9]|4\d)px"),
@@ -963,7 +1030,7 @@ def _icon_card_triptych(index: ScanIndex) -> list[Candidate]:
                 rounded = _has_any(
                     element.surface, (r"rounded-(?:lg|xl)", r"border-radius")
                 )
-                local = _window(source, element.line, 0, 8)
+                local = budget.window(source, element.line, 0, 8)
                 icon = bool(re.search(r"<[A-Z][A-Za-z0-9]*(?:Icon)?\b", local))
                 if square and tinted and rounded and icon:
                     icon_tiles.append(element)
@@ -1018,6 +1085,7 @@ def _icon_card_triptych(index: ScanIndex) -> list[Candidate]:
 
 def _repeated_section_kickers(index: ScanIndex) -> list[Candidate]:
     candidates: list[Candidate] = []
+    budget = RuleWorkBudget()
     for source in index.ui_files:
         hits: list[Element] = []
         for element in index.elements_for_file(source):
@@ -1032,7 +1100,9 @@ def _repeated_section_kickers(index: ScanIndex) -> list[Candidate]:
                 )
             ):
                 continue
-            if re.search(r"<h2\b", _window(source, element.line, 0, 7), re.IGNORECASE):
+            if re.search(
+                r"<h2\b", budget.window(source, element.line, 0, 7), re.IGNORECASE
+            ):
                 hits.append(element)
         if len(hits) >= 3:
             candidates.append(
@@ -1065,6 +1135,7 @@ SUSPICIOUS_METRICS = (
 
 def _round_metric_proof_row(index: ScanIndex) -> list[Candidate]:
     candidates: list[Candidate] = []
+    budget = RuleWorkBudget()
     metric_re = re.compile(
         "|".join(f"(?:{item})" for item in SUSPICIOUS_METRICS), re.IGNORECASE
     )
@@ -1079,7 +1150,8 @@ def _round_metric_proof_row(index: ScanIndex) -> list[Candidate]:
                 ),
             ):
                 continue
-            nearby = _window(source, element.line, 1, 100)
+            budget.charge_anchor()
+            nearby = budget.window(source, element.line, 1, 100)
             matches = list(metric_re.finditer(nearby))
             values = {
                 re.sub(r"\s+", "", match.group(0).lower()): match.group(0)
@@ -1283,6 +1355,7 @@ ACCENT_COLORS = (
 
 def _multicolor_card_wash(index: ScanIndex) -> list[Candidate]:
     candidates: list[Candidate] = []
+    budget = RuleWorkBudget()
     for source in index.ui_files:
         for grid in index.elements_for_file(source):
             if not _has_any(
@@ -1290,8 +1363,11 @@ def _multicolor_card_wash(index: ScanIndex) -> list[Candidate]:
                 (r"grid-cols-(?:3|4)", r"grid-template-columns\s*:\s*repeat\((?:3|4)"),
             ):
                 continue
+            budget.charge_anchor()
             end = grid.line + 190
-            cards = _card_elements_in_range(index, source, grid.line, end)
+            range_elements = index.elements_in_line_range(source, grid.line, end)
+            budget.charge_range(range_elements)
+            cards = _card_elements_in_range(range_elements)
             colors: dict[str, Element] = {}
             for element in cards:
                 for color in ACCENT_COLORS:

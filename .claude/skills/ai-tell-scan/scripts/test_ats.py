@@ -250,9 +250,28 @@ class AiTellScanTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "CSS block limit exceeded"):
                     scan(root)
 
-        with patch("ats_core.MAX_CANDIDATES", 0):
-            with self.assertRaisesRegex(ValueError, "Candidate limit exceeded"):
-                scan(PROJECTS / "react-01")
+            with patch("ats_core.MAX_CANDIDATES", 0):
+                with self.assertRaisesRegex(ValueError, "Candidate limit exceeded"):
+                    scan(PROJECTS / "react-01")
+
+    def test_rule_range_work_fails_closed_for_dense_anchor_fixture(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "package.json").write_text(
+                json.dumps({"dependencies": {"react": "19.0.0"}}),
+                encoding="utf-8",
+            )
+            anchors = "".join(
+                '<div className="grid grid-cols-3"></div>' for _ in range(400)
+            )
+            (root / "App.tsx").write_text(
+                f"export const App = () => <main>{anchors}</main>;\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                ValueError, "Rule (?:range|source-window) work limit exceeded"
+            ):
+                scan(root)
 
     def test_output_paths_are_create_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

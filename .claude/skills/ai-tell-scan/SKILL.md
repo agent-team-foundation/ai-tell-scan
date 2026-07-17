@@ -67,8 +67,9 @@ Do not add hosted metadata to an ordinary local or private scan.
 The scanner ignores dependency directories, build output, generated/minified
 files, tests, snapshots, stories, fixtures, symlinks, and files over 1 MB. It
 fails closed at 64 MiB or 1,000,000 lines of eligible source and caps indexed
-CSS blocks, UI elements, and candidates rather than retaining an unbounded
-repository in memory. In a
+CSS blocks, UI elements, candidates, and per-rule anchor/range/window work
+rather than retaining or repeatedly traversing an unbounded repository in
+memory. In a
 monorepo it scopes each UI file to its nearest React/Next package, so a sibling
 React package cannot make Preact or plain-package source eligible. It reads
 literal JSX/HTML classes plus locally resolvable CSS class blocks. Do not widen
