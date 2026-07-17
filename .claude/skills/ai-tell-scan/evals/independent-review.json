@@ -1,0 +1,429 @@
+{
+  "schemaVersion": "ats-independent-review-1",
+  "toolName": "ai-tell-scan",
+  "toolVersion": "0.2.0",
+  "reviewer": "blind-agent",
+  "blindedToGold": true,
+  "projects": [
+    {
+      "projectId": "react-01",
+      "decisions": [
+        {
+          "ruleId": "ats.gradient-display-heading",
+          "file": "src/App.tsx",
+          "line": 6,
+          "disposition": "confirmed",
+          "rationale": "The shipped App imports hero.css and gives its only display-scale h1 a three-color linear gradient, transparent foreground, and text clipping through the local heroTitle class. It owns the whole page message, has no evident brand rationale, and can become a solid-color heading without changing meaning or hierarchy."
+        }
+      ],
+      "targetId": "react-01",
+      "sourceDigest": "f34982e34fadd8eabbf0c30a5c32b1340b45ebb9c5e13e78f7bcc23696dd23df",
+      "candidateSetDigest": "313c1a97e408363ca9ad54b2076f04623c4be4e9e4193ad8e43d2d38a13fde35",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "react-02",
+      "decisions": [
+        {
+          "ruleId": "ats.aurora-centered-hero",
+          "file": "src/App.tsx",
+          "line": 3,
+          "disposition": "confirmed",
+          "rationale": "The root App is a full-screen centered hero containing its primary h1 and Start now CTA alongside an absolute purple-blue gradient layer with blur-3xl. The glow is decorative rather than product evidence, dominates a generic launch composition, and can be removed without changing the message or action."
+        }
+      ],
+      "targetId": "react-02",
+      "sourceDigest": "15942426afe20095a6d1108673acea8ff6c684d01587bf2348b8b129f19ab5d9",
+      "candidateSetDigest": "81e467731f42e46800cbd965585a55b0384bef6cf91c71e5d11ab8d9e0386d83",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "next-03",
+      "decisions": [
+        {
+          "ruleId": "ats.glass-floating-nav",
+          "file": "app/page.tsx",
+          "line": 4,
+          "disposition": "confirmed",
+          "rationale": "The root Next page places Docs and Join in a fixed top capsule combining a full radius, translucent white surface, backdrop blur, border, and shadow. Its persistent placement makes the layered treatment prominent, while flattening the container would preserve both navigation actions."
+        }
+      ],
+      "targetId": "next-03",
+      "sourceDigest": "fb97079759dbeeed6f15507a33a45f0324dad7766651042fc8a66d6da86e6d3c",
+      "candidateSetDigest": "7785a5f7533bbb19c527fdc083e3481bad3ffddbff8847e647cdec5fbf28749f",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "react-04",
+      "decisions": [
+        {
+          "ruleId": "ats.icon-card-triptych",
+          "file": "src/App.tsx",
+          "line": 5,
+          "disposition": "confirmed",
+          "rationale": "The entire root App is a three-column family of three identical rounded, bordered, shadowed feature cards. Each repeats a tinted square Lucide icon tile followed by a heading and description; no product context explains the uniform template, and varying the information shapes would preserve the content."
+        }
+      ],
+      "targetId": "react-04",
+      "sourceDigest": "77e7167ccb0c877cbed5fab74d2fb266f7ea38de96e66f8a8ff8ec20cfd67e6b",
+      "candidateSetDigest": "2327c13dfc2910ae4f5debfdcf6008d44a096e8f740d82649014d09e8a84b781",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "next-05",
+      "decisions": [
+        {
+          "ruleId": "ats.repeated-section-kickers",
+          "file": "app/page.tsx",
+          "line": 5,
+          "disposition": "confirmed",
+          "rationale": "The root page repeats the same uppercase, widely tracked micro-label immediately above all three h2 sections: Features, Workflow, and Pricing. This is the page-wide hierarchy device rather than one necessary editorial label, and the section headings remain understandable if the redundant kickers are removed."
+        }
+      ],
+      "targetId": "next-05",
+      "sourceDigest": "936b61b972dfd88d56c71f705ff6eb964a926940a37ec9b8cb008b2c21774f11",
+      "candidateSetDigest": "032c30d1d1cf9267b5484488cbbcf4220608df6a1f371aa997c9845a2ae6a0a0",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "react-06",
+      "decisions": [
+        {
+          "ruleId": "ats.round-metric-proof-row",
+          "file": "src/App.tsx",
+          "line": 3,
+          "disposition": "confirmed",
+          "rationale": "The root App presents 48k+ Teams, 97% Faster, and 6x Output as a centered three-up proof row. These are generic rounded marketing claims with no source, date, measurement window, or supporting context; removing or substantiating them would preserve page behavior."
+        }
+      ],
+      "targetId": "react-06",
+      "sourceDigest": "eb8fd0abba70bf90843ee6dc1f2035adda2dbb5feeae703398abdbfb833af05c",
+      "candidateSetDigest": "94fc8e7ba41339b62ff849a94623f5763b42c5260300671bf2277e29e395485c",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "react-07",
+      "decisions": [
+        {
+          "ruleId": "ats.glass-card-field",
+          "file": "src/App.tsx",
+          "line": 7,
+          "disposition": "confirmed",
+          "rationale": "This root marketing composition pairs an h1 and Open workspace action with four repeated translucent, bordered, shadowed, blurred panels over a slate-indigo gradient. The panels contain generic feature labels rather than dashboard state where depth communicates meaning, so a flat surface system preserves the content."
+        }
+      ],
+      "targetId": "react-07",
+      "sourceDigest": "a36c0dc210bed37bf78ecfb9cbeb4e6aa5d9d211c760d428d1dd1f84918ad79b",
+      "candidateSetDigest": "74a5cf13d58793426caf8f50a54dfa808f10f14e2b15a950e05803fef289fbe9",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "next-08",
+      "decisions": [
+        {
+          "ruleId": "ats.pill-role-overload",
+          "file": "app/page.tsx",
+          "line": 4,
+          "disposition": "confirmed",
+          "rationale": "One root-page composition applies full-round treatment to seven visible elements spanning two actions, a search field, two badges, a status dot, and an avatar-like surface. Reusing one silhouette across more than three roles weakens their distinctions, and restoring role-specific action and field shapes preserves semantics."
+        }
+      ],
+      "targetId": "next-08",
+      "sourceDigest": "4314bcfdd79db1fccf7bbc021dcdb963613116d66b5b3f341be6c69b1f702bfc",
+      "candidateSetDigest": "2acb860973ef708abc093fa56448c0ece41f6487265af9ded65b0302af1e320b",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "react-09",
+      "decisions": [
+        {
+          "ruleId": "ats.spring-hover-everywhere",
+          "file": "src/App.tsx",
+          "line": 4,
+          "disposition": "confirmed",
+          "rationale": "All four reachable controls in the root App repeat transition-all with either scale or lift on hover. The motion covers every interactive surface rather than one emphasized action and communicates no distinct state, so property-specific feedback can replace it without changing behavior."
+        }
+      ],
+      "targetId": "react-09",
+      "sourceDigest": "5a99bb52d8e30f37bf7114971b283ffdf35194f2f198860424b64f5e173176b1",
+      "candidateSetDigest": "9856df3965b5615b9ebf20bec032dbe8152dd7145598c41ae319078265e9c267",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "next-10",
+      "decisions": [
+        {
+          "ruleId": "ats.multicolor-card-wash",
+          "file": "app/page.tsx",
+          "line": 3,
+          "disposition": "confirmed",
+          "rationale": "The root page is a uniform three-card Plan, Build, and Ship grid in which each framed card pairs its own emerald, violet, or orange wash with same-family border and text. Nothing establishes those hues as semantic states, and one shared surface system would retain the stage labels."
+        }
+      ],
+      "targetId": "next-10",
+      "sourceDigest": "ba7fc3967c358512b526be051e1e7ca68bcbaca349443d237d70fe3c2c87e616",
+      "candidateSetDigest": "b45d7d729e618157c0b05c26ec08128d92621d90f21275e0f122dcc9f403de96",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "react-11",
+      "decisions": [
+        {
+          "ruleId": "ats.gradient-display-heading",
+          "file": "src/App.tsx",
+          "line": 5,
+          "disposition": "confirmed",
+          "rationale": "The full-screen root hero gives its primary seven-xl h1 a blue-violet-pink gradient, background clipping, and transparent text in one element. It is the dominant message, no brand context justifies the treatment, and a solid heading would preserve the wording and hierarchy."
+        },
+        {
+          "ruleId": "ats.aurora-centered-hero",
+          "file": "src/App.tsx",
+          "line": 3,
+          "disposition": "confirmed",
+          "rationale": "The same shipped composition is a tall centered hero with its primary h1 and Get started action plus an absolute blurred indigo-pink gradient blob. The atmospheric layer is decorative rather than product evidence, and removing it leaves the conversion content and behavior intact."
+        }
+      ],
+      "targetId": "react-11",
+      "sourceDigest": "ade03e2442dcbc3c8026de35c90bab3cdca29ad2857e07f76552ba401b0432b9",
+      "candidateSetDigest": "8785828fa12c37061be4863108a1cfda2bb6715db7ddce11ab75ef32d86e4d94",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "next-12",
+      "decisions": [
+        {
+          "ruleId": "ats.glass-floating-nav",
+          "file": "app/page.tsx",
+          "line": 4,
+          "disposition": "confirmed",
+          "rationale": "The root page's sticky top navigation combines a capsule radius, translucent white fill, backdrop blur, border, and shadow around the Home and Join actions. Its persistent position makes the layered glass treatment prominent, and flattening the container preserves navigation behavior."
+        },
+        {
+          "ruleId": "ats.pill-role-overload",
+          "file": "app/page.tsx",
+          "line": 5,
+          "disposition": "confirmed",
+          "rationale": "Within the same root page, full-round styling appears on the Home link, Join button, search field, two badges, status dot, and avatar-like element. That is seven elements across action, field, badge, and status/avatar roles, so narrowing pill use to one semantic family retains every meaning and interaction."
+        }
+      ],
+      "targetId": "next-12",
+      "sourceDigest": "d65bf8bfb7dbfef08c03ae291b297c94db93d717ddf2efd769c20808be0a1e53",
+      "candidateSetDigest": "e79017e855f526201c6ec06c2121ef98ab8f899f33a37c55d5d1419ea9aead7d",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "react-13",
+      "decisions": [
+        {
+          "ruleId": "ats.icon-card-triptych",
+          "file": "src/App.tsx",
+          "line": 5,
+          "disposition": "confirmed",
+          "rationale": "The root App is a three-column trio of uniform rounded, bordered, shadowed cards, each led by a tinted square Lucide icon tile and followed by a heading and description. Learn, Build, and Launch do not require this repeated decorative template, so varying the structures preserves meaning."
+        },
+        {
+          "ruleId": "ats.multicolor-card-wash",
+          "file": "src/App.tsx",
+          "line": 5,
+          "disposition": "confirmed",
+          "rationale": "The same framed card family assigns a different blue, violet, or orange wash to each entire card and pairs it with same-family border and foreground. These are feature stages rather than established semantic statuses, and a shared neutral surface would retain the content."
+        }
+      ],
+      "targetId": "react-13",
+      "sourceDigest": "79b94c02cabf8302c9081a17e3f6966d02a4a8de539052862b3a7fafe8daaa63",
+      "candidateSetDigest": "c615aff2fc7e3c843829b90e683573b6506b10ae22261a6f8ba393003c6a8fc1",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "next-14",
+      "decisions": [
+        {
+          "ruleId": "ats.round-metric-proof-row",
+          "file": "app/page.tsx",
+          "line": 8,
+          "disposition": "confirmed",
+          "rationale": "The root page presents 72k+, 96.5%, and 8x as an unlabeled three-column proof row directly below Trusted at scale. Despite one decimal value, the composition supplies no source, date, definition, or measurement window, so removing or substantiating the claims preserves behavior."
+        },
+        {
+          "ruleId": "ats.repeated-section-kickers",
+          "file": "app/page.tsx",
+          "line": 5,
+          "disposition": "confirmed",
+          "rationale": "Proof, Features, and Pricing repeat the identical uppercase tracked micro-label pattern immediately before three h2s across the root page. This is a repeated decorative hierarchy device rather than one necessary editorial category, and the h2 section titles stand without it."
+        }
+      ],
+      "targetId": "next-14",
+      "sourceDigest": "c7bba223f650b477c2ded0472ef0992a95d78876fa9a8e33c31af6634c97b0ec",
+      "candidateSetDigest": "d702ba4c8407549bb56cd232dd78fc108382ae16bb534195ac3afd69993675d4",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "react-15",
+      "decisions": [
+        {
+          "ruleId": "ats.spring-hover-everywhere",
+          "file": "src/App.tsx",
+          "line": 8,
+          "disposition": "confirmed",
+          "rationale": "Each of the four Plan, Build, Review, and Ship controls repeats transition-all with scale or lift hover motion inside one root composition. The universal spring effect does not communicate differing states, and property-specific feedback can replace it without changing the actions."
+        },
+        {
+          "ruleId": "ats.glass-card-field",
+          "file": "src/App.tsx",
+          "line": 7,
+          "disposition": "confirmed",
+          "rationale": "The root App combines a marketing h1 and Open action with four translucent, bordered, shadowed, blurred panels over a slate-purple gradient. The panels are generic release-stage choices rather than analytic state surfaces, so flattening them preserves both the labels and their controls."
+        }
+      ],
+      "targetId": "react-15",
+      "sourceDigest": "2840d2e880ffce8b1c28d4540ceaccf7dcf9cf775b6e68126f18f52752df8f3e",
+      "candidateSetDigest": "65ddf47800c07f212bfc1891f9e5299ed66d7333a3f5901a54f981438dbf302b",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "react-16",
+      "decisions": [
+        {
+          "ruleId": "ats.gradient-display-heading",
+          "file": "src/App.tsx",
+          "line": 5,
+          "disposition": "rejected",
+          "rationale": "The apparent display heading is explicitly identified as the official PRISM gradient wordmark inside an identity specimen, with accessible brand labeling and copy stating that the registered mark always uses the documented spectrum. This is intentional brand language rather than a generic launch-page heading, so removing the gradient would destroy meaning."
+        }
+      ],
+      "targetId": "react-16",
+      "sourceDigest": "2ab4fe8f90ced5af936aa82c37926bad9812fa4353ae6c377ee15c90cd87fc9e",
+      "candidateSetDigest": "91106f490a5469bbae6b293bd488f28c60801e3d7f74aa2640d3a5d92b1dae89",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "next-17",
+      "decisions": [
+        {
+          "ruleId": "ats.round-metric-proof-row",
+          "file": "app/page.tsx",
+          "line": 5,
+          "disposition": "rejected",
+          "rationale": "The three values belong to a Quarterly reliability study and are labeled as audited Q2 2026 results. The same page supplies metric definitions, an exact 30 June 2026 audit date, and a methodology link, satisfying the rule's specific measured-value rejection case rather than presenting unsupported generic proof."
+        }
+      ],
+      "targetId": "next-17",
+      "sourceDigest": "93a776632645c88cf9d286cd0cbd53cfa99177c8c3e2a183b7639af390e494cc",
+      "candidateSetDigest": "3e506476b8004871eede7dedd17b764c9767245a03f9bb92b65c346b37cd5dc5",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "react-18",
+      "decisions": [
+        {
+          "ruleId": "ats.spring-hover-everywhere",
+          "file": "src/App.tsx",
+          "line": 6,
+          "disposition": "rejected",
+          "rationale": "This shipped surface is explicitly a Motion response playground whose stated purpose is to compare the same scale response across four control shapes. Repeating the hover motion is therefore the product task being demonstrated, not indiscriminate default interaction styling, and removing it would break that meaning."
+        }
+      ],
+      "targetId": "react-18",
+      "sourceDigest": "80e2268fc46e95bdc9f167d0cae1820ddef9be51e11caf75661e8cdf7a969278",
+      "candidateSetDigest": "38429e3b370439086c9a9d27c9130289ab84fadf593c88266f3a5501dc4acf21",
+      "scanStatus": "needs-review"
+    },
+    {
+      "projectId": "next-19",
+      "decisions": [],
+      "targetId": "next-19",
+      "sourceDigest": "dd9b67d1b6622d7631536f080b3096b81c65ba05490cedaa4c1e9aa0077575e8",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "completed"
+    },
+    {
+      "projectId": "react-20",
+      "decisions": [],
+      "targetId": "react-20",
+      "sourceDigest": "7aad1c743f8e4562bbb5b6295e312da7b4bf8e73b7e36e5a4019e494780b07b7",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "completed"
+    },
+    {
+      "projectId": "next-21",
+      "decisions": [],
+      "targetId": "next-21",
+      "sourceDigest": "695fc7a85f8289cac9be24ea3d1ca88580188afe39c51066d8aef66989874205",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "completed"
+    },
+    {
+      "projectId": "react-22",
+      "decisions": [],
+      "targetId": "react-22",
+      "sourceDigest": "d8b5f03f8bb54f3981bde22f3965b613fda2919dd41bc555ac2730e18f01a6cc",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "completed"
+    },
+    {
+      "projectId": "next-23",
+      "decisions": [],
+      "targetId": "next-23",
+      "sourceDigest": "d54628a6b3ecbfdca3a0b3f94fa8d146448d4d3112c4558c498456a6ec9bf391",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "completed"
+    },
+    {
+      "projectId": "react-24",
+      "decisions": [],
+      "targetId": "react-24",
+      "sourceDigest": "f0dddea16759a52acfe60aa92a9e05258f69fd81cfb717f295753beec0c6aae3",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "completed"
+    },
+    {
+      "projectId": "next-25",
+      "decisions": [],
+      "targetId": "next-25",
+      "sourceDigest": "5459bef1f975a33203c8301dedfe09820923c0011cd576429ad777004773da06",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "completed"
+    },
+    {
+      "projectId": "next-26",
+      "decisions": [],
+      "targetId": "next-26",
+      "sourceDigest": "cff6c4e35b1195feb628c1f0d42bb21feb984111c36cff71904c31ce0b5f1bdd",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "not-applicable"
+    },
+    {
+      "projectId": "react-27",
+      "decisions": [],
+      "targetId": "react-27",
+      "sourceDigest": "e4c6f5009613ed5b0b0d7b4a0927975fdd07f16781243da0c4b9570e78fd3fa3",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "completed"
+    },
+    {
+      "projectId": "react-28",
+      "decisions": [],
+      "targetId": "react-28",
+      "sourceDigest": "857e1f1775e1c62fbc028b47f550f845bca7dc3d1198df64a6d42c851aa6075b",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "not-applicable"
+    },
+    {
+      "projectId": "next-29",
+      "decisions": [],
+      "targetId": "next-29",
+      "sourceDigest": "23aacc228f111433595b54c4ee0f08cd1f874bee3d07911bd7036a0a514bedbd",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "completed"
+    },
+    {
+      "projectId": "react-30",
+      "decisions": [],
+      "targetId": "react-30",
+      "sourceDigest": "1d3a446e64fc7c440effc3c5bc50948f2119e1e992189e04ec7b0784a9991cb3",
+      "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "scanStatus": "completed"
+    }
+  ],
+  "usabilityFindings": []
+}

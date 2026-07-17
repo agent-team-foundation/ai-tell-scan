@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "ats-1",
+  "tool": {
+    "name": "ai-tell-scan",
+    "version": "0.2.0"
+  },
+  "repository": {
+    "source": "https://github.com/agent-team-foundation/first-tree"
+  },
+  "generatedAt": "2026-07-16T00:00:00Z",
+  "target": {
+    "label": "web",
+    "targetId": "@first-tree/web",
+    "frameworks": ["react"],
+    "sourceDigest": "5ad4c790da3e5bdc1fa5fa8e39e124f91dfa5e7a95a9e13f0b7c2fc3852c519f"
+  },
+  "scan": {
+    "status": "completed",
+    "reason": "No composite rule crossed the candidate threshold; this is not proof of authorship or overall design quality.",
+    "filesExamined": 336,
+    "uiFilesExamined": 243,
+    "rulesEvaluated": 10,
+    "readOnly": true
+  },
+  "summary": {
+    "candidateCount": 0,
+    "confirmedCount": 0,
+    "rejectedCount": 0,
+    "reportedCount": 0,
+    "suppressedConfirmedCount": 0
+  },
+  "candidateSetDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "review": {
+    "state": "not-required",
+    "policy": "Review visible page/component context; never infer AI authorship from a candidate."
+  },
+  "candidates": [],
+  "tells": [],
+  "limitations": [
+    "Static analysis sees only literal JSX/HTML classes and resolvable local CSS class blocks.",
+    "Runtime composition, screenshots, visual prominence, and product intent require agent review.",
+    "A clean result is not a design-system audit and does not establish who or what authored the code."
+  ]
+}

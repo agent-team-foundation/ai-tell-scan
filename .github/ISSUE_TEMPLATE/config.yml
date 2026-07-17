@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private vulnerability report
+    url: https://github.com/agent-team-foundation/ai-tell-scan/security/advisories/new
+    about: Report suspected security defects privately. Do not open a public issue.
+  - name: Run the hosted scan
+    url: https://first-tree.ai/ai-tell-scan
+    about: Scan a public React or Next.js GitHub repository before reporting an evidence problem.
