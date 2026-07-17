@@ -133,6 +133,56 @@ class AiTellScanTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "candidate|evidence"):
                     validate_final_report(report)
 
+    def test_executable_validation_rejects_malformed_required_envelope(self) -> None:
+        valid = reviewed(scan(PROJECTS / "react-01"))
+        mutations = {
+            "missing target label": lambda report: report["target"].pop("label"),
+            "missing source digest": lambda report: report["target"].pop(
+                "sourceDigest"
+            ),
+            "invalid source digest": lambda report: report["target"].update(
+                {"sourceDigest": "not-a-sha256"}
+            ),
+            "duplicate frameworks": lambda report: report["target"].update(
+                {"frameworks": ["react", "react"]}
+            ),
+            "missing scan reason": lambda report: report["scan"].pop("reason"),
+            "boolean scan counter": lambda report: report["scan"].update(
+                {"filesExamined": True}
+            ),
+            "negative scan counter": lambda report: report["scan"].update(
+                {"uiFilesExamined": -1}
+            ),
+            "missing scan counter": lambda report: report["scan"].pop(
+                "rulesEvaluated"
+            ),
+            "missing review policy": lambda report: report["review"].pop("policy"),
+            "empty reviewer": lambda report: report["review"].update(
+                {"reviewer": ""}
+            ),
+            "boolean summary counter": lambda report: report["summary"].update(
+                {"candidateCount": True}
+            ),
+            "incomplete rescan": lambda report: report.update(
+                {
+                    "rescan": {
+                        "baselineSourceDigest": None,
+                        "resolved": [],
+                        "persisted": [],
+                    }
+                }
+            ),
+        }
+
+        for label, mutate in mutations.items():
+            with self.subTest(label=label):
+                report = json.loads(json.dumps(valid))
+                mutate(report)
+                with self.assertRaisesRegex(
+                    ValueError, "target|framework|scan|review|summary|rescan"
+                ):
+                    validate_final_report(report)
+
     def test_source_reader_fails_closed_at_aggregate_byte_limit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

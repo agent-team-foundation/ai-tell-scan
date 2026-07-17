@@ -1515,6 +1515,14 @@ def _is_safe_relative_file(value: object) -> bool:
     return not path.is_absolute() and path.parts not in {(), (".",)} and ".." not in path.parts
 
 
+def _is_sha256(value: object) -> bool:
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+
+
+def _is_nonnegative_int(value: object) -> bool:
+    return type(value) is int and value >= 0
+
+
 def _validate_candidate_core(candidate: dict[str, object]) -> None:
     candidate_id = candidate.get("candidateId")
     rule_id = candidate.get("ruleId")
@@ -1634,6 +1642,10 @@ def _validated_finalized_tells(report: dict[str, object]) -> list[dict[str, obje
         "reportedCount": len(expected_tells),
         "suppressedConfirmedCount": max(0, len(confirmed) - len(expected_tells)),
     }
+    if any(
+        not _is_nonnegative_int(summary.get(key)) for key in expected_summary
+    ):
+        raise ValueError("Finalized report summary fields are missing or invalid.")
     if tells != expected_tells or any(
         summary.get(key) != value for key, value in expected_summary.items()
     ):
@@ -1641,6 +1653,32 @@ def _validated_finalized_tells(report: dict[str, object]) -> list[dict[str, obje
             "Finalized report tells or summary are internally inconsistent."
         )
     return confirmed
+
+
+def _validate_rescan_shape(report: dict[str, object]) -> None:
+    rescan = report.get("rescan")
+    if rescan is None:
+        return
+    if not isinstance(rescan, dict):
+        raise ValueError("Report rescan metadata is invalid.")
+    if "baselineSourceDigest" not in rescan:
+        raise ValueError("Report rescan baselineSourceDigest is missing.")
+    baseline_digest = rescan.get("baselineSourceDigest")
+    if baseline_digest is not None and not _is_sha256(baseline_digest):
+        raise ValueError("Report rescan baselineSourceDigest is invalid.")
+    for field in ("resolved", "persisted", "introduced"):
+        tells = rescan.get(field)
+        if not isinstance(tells, list) or not all(
+            isinstance(item, dict) for item in tells
+        ):
+            raise ValueError(f"Report rescan {field} list is invalid.")
+        for tell in tells:
+            if not isinstance(tell, dict):
+                raise ValueError(f"Report rescan {field} list is invalid.")
+            _validate_candidate_core(tell)
+            rationale = tell.get("reviewRationale")
+            if not isinstance(rationale, str) or len(rationale.strip()) < 12:
+                raise ValueError(f"Report rescan {field} rationale is invalid.")
 
 
 def validate_final_report(report: dict[str, object]) -> None:
@@ -1656,15 +1694,34 @@ def validate_final_report(report: dict[str, object]) -> None:
         raise ValueError("Report tool version is missing.")
     if not isinstance(target, dict):
         raise ValueError("Report target is missing.")
+    if not isinstance(target.get("label"), str) or not target["label"].strip():
+        raise ValueError("Report target label is missing.")
     if not isinstance(target.get("targetId"), str) or not target["targetId"]:
         raise ValueError("Report targetId is missing.")
     frameworks = target.get("frameworks")
     if not isinstance(frameworks, list) or any(
-        item not in {"react", "nextjs"} for item in frameworks
-    ):
+        not isinstance(item, str) or item not in {"react", "nextjs"}
+        for item in frameworks
+    ) or len(frameworks) != len(set(frameworks)):
         raise ValueError("Report framework labels are invalid.")
+    if not _is_sha256(target.get("sourceDigest")):
+        raise ValueError("Report target sourceDigest is missing or invalid.")
     if not isinstance(scan_result, dict) or scan_result.get("readOnly") is not True:
         raise ValueError("Report does not preserve the read-only scan assertion.")
+    if not isinstance(scan_result.get("reason"), str) or not scan_result["reason"].strip():
+        raise ValueError("Report scan reason is missing or invalid.")
+    for field in ("filesExamined", "uiFilesExamined", "rulesEvaluated"):
+        if not _is_nonnegative_int(scan_result.get(field)):
+            raise ValueError(f"Report scan {field} is missing or invalid.")
+    review = report.get("review")
+    if not isinstance(review, dict):
+        raise ValueError("Report review metadata is missing or invalid.")
+    if not isinstance(review.get("policy"), str) or not review["policy"].strip():
+        raise ValueError("Report review policy is missing or invalid.")
+    if "reviewer" in review and (
+        not isinstance(review.get("reviewer"), str) or not review["reviewer"].strip()
+    ):
+        raise ValueError("Report reviewer is invalid.")
     if not isinstance(limitations, list) or not limitations or any(
         not isinstance(item, str) or not item.strip() for item in limitations
     ):
@@ -1672,6 +1729,7 @@ def validate_final_report(report: dict[str, object]) -> None:
     _validated_hosted_repository_source(report)
 
     confirmed = _validated_finalized_tells(report)
+    _validate_rescan_shape(report)
     if len(confirmed) != report["summary"]["confirmedCount"]:
         raise ValueError("Report confirmed count is inconsistent.")
 
