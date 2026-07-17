@@ -815,18 +815,17 @@ def _aurora_centered_hero(index: ScanIndex) -> list[Candidate]:
         for element in index.elements_for_file(source):
             if element.tag not in {"div", "header", "main", "section"}:
                 continue
-            own_surface = element.surface
-            centered = "text-center" in own_surface and _has_any(
-                own_surface, (r"items-center", r"justify-center")
+            nearby = budget.window(source, element.line, 3, 120).lower()
+            surface = f"{element.surface} {nearby}"
+            centered = "text-center" in surface and _has_any(
+                surface, (r"items-center", r"justify-center")
             )
             tall = _has_any(
-                own_surface,
+                surface,
                 (r"min-h-(?:screen|\[\d+vh\])", r"h-screen", r"py-(?:2[048]|3[02])"),
             )
             if not centered or not tall:
                 continue
-            nearby = budget.window(source, element.line, 3, 120).lower()
-            surface = f"{own_surface} {nearby}"
             atmospheric = _has_any(
                 surface,
                 (r"blur-(?:2xl|3xl|\[)", r"filter\s*:\s*blur", r"radial-gradient"),

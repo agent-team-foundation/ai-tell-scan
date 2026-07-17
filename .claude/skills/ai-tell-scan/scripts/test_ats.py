@@ -273,6 +273,36 @@ class AiTellScanTests(unittest.TestCase):
             ):
                 scan(root)
 
+    def test_aurora_hero_combines_parent_and_child_layout_primitives(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "package.json").write_text(
+                json.dumps({"dependencies": {"react": "19.0.0"}}),
+                encoding="utf-8",
+            )
+            (root / "App.tsx").write_text(
+                """export function App() {
+  return (
+    <section className="relative min-h-screen py-24">
+      <div className="flex flex-col items-center justify-center text-center">
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 blur-3xl" />
+        <h1>Build with evidence</h1>
+        <a href="/start">Start now</a>
+      </div>
+    </section>
+  );
+}
+""",
+                encoding="utf-8",
+            )
+
+            report = scan(root)
+
+            self.assertIn(
+                "ats.aurora-centered-hero",
+                {candidate["ruleId"] for candidate in report["candidates"]},
+            )
+
     def test_output_paths_are_create_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
