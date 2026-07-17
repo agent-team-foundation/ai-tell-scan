@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.dont_write_bytecode = True
 
@@ -17,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ats_core import (  # noqa: E402
     candidate_set_digest,
     finalize,
+    read_sources,
     review_template,
     scan,
     validate_final_report,
@@ -111,6 +113,77 @@ class AiTellScanTests(unittest.TestCase):
 
     def test_completed_report_passes_executable_validation(self) -> None:
         validate_final_report(reviewed(scan(PROJECTS / "react-01")))
+
+    def test_executable_validation_rejects_malformed_candidate_core_and_evidence(self) -> None:
+        valid = reviewed(scan(PROJECTS / "react-01"))
+        mutations = {
+            "rule id type": lambda candidate: candidate.update({"ruleId": 42}),
+            "null title": lambda candidate: candidate.update({"title": None}),
+            "unknown severity": lambda candidate: candidate.update({"severity": "critical"}),
+            "boolean confidence": lambda candidate: candidate.update({"confidence": True}),
+            "boolean line": lambda candidate: candidate.update({"line": True}),
+            "empty evidence record": lambda candidate: candidate["evidence"].__setitem__(0, {}),
+        }
+
+        for label, mutate in mutations.items():
+            with self.subTest(label=label):
+                report = json.loads(json.dumps(valid))
+                candidate = report["candidates"][0]
+                mutate(candidate)
+                with self.assertRaisesRegex(ValueError, "candidate|evidence"):
+                    validate_final_report(report)
+
+    def test_source_reader_fails_closed_at_aggregate_byte_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "package.json").write_text(
+                json.dumps({"dependencies": {"react": "19.0.0"}}),
+                encoding="utf-8",
+            )
+            (root / "App.tsx").write_text(
+                "export function App() { return <main>Hello</main>; }\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "Source byte limit exceeded"):
+                read_sources(root, max_total_bytes=16)
+
+    def test_source_reader_fails_closed_at_aggregate_line_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "App.tsx").write_text("one\ntwo\nthree\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Source line limit exceeded"):
+                read_sources(root, max_total_lines=2)
+
+    def test_index_and_candidate_limits_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "package.json").write_text(
+                json.dumps({"dependencies": {"react": "19.0.0"}}),
+                encoding="utf-8",
+            )
+            (root / "App.tsx").write_text(
+                "export function App() { return <main><span>A</span><span>B</span></main>; }\n",
+                encoding="utf-8",
+            )
+            with patch("ats_core.MAX_INDEXED_ELEMENTS", 1):
+                with self.assertRaisesRegex(ValueError, "UI element limit exceeded"):
+                    scan(root)
+
+            (root / "App.tsx").write_text(
+                'import "./styles.css";\nexport function App() { return <main className="one">A</main>; }\n',
+                encoding="utf-8",
+            )
+            (root / "styles.css").write_text(
+                ".one { color: red; }\n.two { color: blue; }\n",
+                encoding="utf-8",
+            )
+            with patch("ats_core.MAX_INDEXED_CSS_BLOCKS", 1):
+                with self.assertRaisesRegex(ValueError, "CSS block limit exceeded"):
+                    scan(root)
+
+        with patch("ats_core.MAX_CANDIDATES", 0):
+            with self.assertRaisesRegex(ValueError, "Candidate limit exceeded"):
+                scan(PROJECTS / "react-01")
 
     def test_output_paths_are_create_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -524,6 +597,30 @@ class AiTellScanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "finalized"):
             finalize(current_report, current_review, baseline=pending)
         self.assertEqual(finalized["review"]["state"], "complete")
+
+    def test_hosted_rescan_requires_the_same_repository_source(self) -> None:
+        baseline_candidate = scan(PROJECTS / "react-01", target_id="shared-target")
+        baseline_candidate["repository"] = {"source": "https://github.com/acme/one"}
+        baseline_candidate["generatedAt"] = "2026-07-17T03:30:45Z"
+        baseline = reviewed(baseline_candidate)
+
+        current = scan(PROJECTS / "react-13", target_id="shared-target")
+        current["repository"] = {"source": "https://github.com/acme/two"}
+        current["generatedAt"] = "2026-07-17T04:30:45Z"
+        review = review_template(current)
+        for decision in review["decisions"]:
+            decision["disposition"] = "confirmed"
+            decision["rationale"] = (
+                "The visible fixture context satisfies the complete composite rule."
+            )
+
+        with self.assertRaisesRegex(ValueError, "repository.source"):
+            finalize(current, review, baseline=baseline)
+
+        current.pop("repository")
+        current.pop("generatedAt")
+        with self.assertRaisesRegex(ValueError, "repository.source"):
+            finalize(current, review, baseline=baseline)
 
     def test_rescan_rejects_internally_inconsistent_baseline(self) -> None:
         baseline = reviewed(scan(PROJECTS / "react-01"))

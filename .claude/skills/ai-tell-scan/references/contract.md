@@ -69,7 +69,9 @@ authoritative public URL. They do not participate in review binding; source and
 candidate digests continue to bind the reviewed code and evidence.
 
 Rescan comparison additionally requires a completed, internally consistent
-baseline, the same `targetId`, and the same tool version. It compares every
+baseline, the same `targetId`, the same tool version, and the same
+`repository.source` when hosted metadata is present on either report. It
+compares every
 confirmed baseline candidate, including confirmations suppressed from the
 display-only Top 3. This prevents unrelated, tampered, or truncated reports
 from manufacturing `resolved`, `persisted`, or `introduced` results.

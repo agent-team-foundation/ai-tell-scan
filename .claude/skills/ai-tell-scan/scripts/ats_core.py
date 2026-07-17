@@ -12,6 +12,7 @@ import json
 import os
 import re
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -29,6 +30,14 @@ SUPPORTED_EXTENSIONS = {
     ".tsx",
 }
 UI_EXTENSIONS = {".html", ".js", ".jsx", ".ts", ".tsx"}
+MAX_TOTAL_SOURCE_BYTES = 64 * 1024 * 1024
+MAX_TOTAL_SOURCE_LINES = 1_000_000
+MAX_INDEXED_CSS_BLOCKS = 100_000
+MAX_INDEXED_ELEMENTS = 100_000
+MAX_CANDIDATES = 10_000
+HOSTED_REPOSITORY_RE = re.compile(
+    r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+)
 SKIP_DIRECTORIES = {
     "__tests__",
     "__mocks__",
@@ -387,9 +396,15 @@ def _is_skipped(relative_path: str) -> bool:
 
 
 def read_sources(
-    root: Path, max_files: int = 5000, max_file_bytes: int = 1_000_000
+    root: Path,
+    max_files: int = 5000,
+    max_file_bytes: int = 1_000_000,
+    max_total_bytes: int = MAX_TOTAL_SOURCE_BYTES,
+    max_total_lines: int = MAX_TOTAL_SOURCE_LINES,
 ) -> list[SourceFile]:
     files: list[SourceFile] = []
+    total_bytes = 0
+    total_lines = 0
     for current, directories, names in os.walk(root, followlinks=False):
         directories[:] = sorted(
             directory
@@ -408,11 +423,26 @@ def read_sources(
             if _is_skipped(relative):
                 continue
             try:
-                if path.stat().st_size > max_file_bytes:
+                with path.open("rb") as handle:
+                    raw = handle.read(max_file_bytes + 1)
+                if len(raw) > max_file_bytes:
                     continue
-                text = path.read_text(encoding="utf-8")
+                text = raw.decode("utf-8")
             except (OSError, UnicodeDecodeError):
                 continue
+            if total_bytes + len(raw) > max_total_bytes:
+                raise ValueError(
+                    "Source byte limit exceeded "
+                    f"({max_total_bytes}); narrow the scan root."
+                )
+            file_lines = raw.count(b"\n") + (1 if raw else 0)
+            if total_lines + file_lines > max_total_lines:
+                raise ValueError(
+                    "Source line limit exceeded "
+                    f"({max_total_lines}); narrow the scan root."
+                )
+            total_bytes += len(raw)
+            total_lines += file_lines
             files.append(SourceFile(relative, path, text, tuple(text.splitlines())))
             if len(files) > max_files:
                 raise ValueError(
@@ -425,6 +455,7 @@ def _css_index(
     files: Iterable[SourceFile],
 ) -> dict[str, list[CssBlock]]:
     result: dict[str, list[CssBlock]] = {}
+    block_count = 0
     for source in files:
         if source.absolute_path.suffix.lower() not in {
             ".css",
@@ -434,6 +465,12 @@ def _css_index(
         }:
             continue
         for block in CSS_BLOCK_RE.finditer(source.text):
+            block_count += 1
+            if block_count > MAX_INDEXED_CSS_BLOCKS:
+                raise ValueError(
+                    "CSS block limit exceeded "
+                    f"({MAX_INDEXED_CSS_BLOCKS}); narrow the scan root."
+                )
             body = block.group("body")
             body_line = source.text.count("\n", 0, block.start("body")) + 1
             css_block = CssBlock(source=source, body_line=body_line, body=body)
@@ -498,6 +535,11 @@ def _elements(
                     style_blocks=tuple(style_blocks),
                 )
             )
+            if len(result) > MAX_INDEXED_ELEMENTS:
+                raise ValueError(
+                    "UI element limit exceeded "
+                    f"({MAX_INDEXED_ELEMENTS}); narrow the scan root."
+                )
     return result
 
 
@@ -1330,6 +1372,11 @@ def scan(
     if index.frameworks:
         for scanner in RULE_SCANNERS:
             candidates.extend(scanner(index))
+            if len(candidates) > MAX_CANDIDATES:
+                raise ValueError(
+                    "Candidate limit exceeded "
+                    f"({MAX_CANDIDATES}); narrow the scan root."
+                )
 
     deduplicated: dict[tuple[str, str], Candidate] = {}
     for candidate in candidates:
@@ -1461,6 +1508,75 @@ def _tell_sort_key(item: dict[str, object]) -> tuple[float, str, str, int]:
     )
 
 
+def _is_safe_relative_file(value: object) -> bool:
+    if not isinstance(value, str) or not value or "\0" in value or "\\" in value:
+        return False
+    path = Path(value)
+    return not path.is_absolute() and path.parts not in {(), (".",)} and ".." not in path.parts
+
+
+def _validate_candidate_core(candidate: dict[str, object]) -> None:
+    candidate_id = candidate.get("candidateId")
+    rule_id = candidate.get("ruleId")
+    confidence = candidate.get("confidence")
+    line = candidate.get("line")
+    if not isinstance(candidate_id, str) or re.fullmatch(r"ats-[0-9a-f]{16}", candidate_id) is None:
+        raise ValueError("Report contains an invalid candidateId.")
+    if not isinstance(rule_id, str) or re.fullmatch(r"ats\.[a-z0-9-]+", rule_id) is None:
+        raise ValueError("Report contains an invalid candidate ruleId.")
+    for field in ("title", "whyItHurtsTrust", "minimalFix"):
+        value = candidate.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"Report candidate {field} is missing or invalid.")
+    if candidate.get("severity") not in {"medium", "high"}:
+        raise ValueError("Report contains an invalid candidate severity.")
+    if (
+        isinstance(confidence, bool)
+        or not isinstance(confidence, (int, float))
+        or not 0 <= confidence <= 1
+    ):
+        raise ValueError("Report contains an invalid candidate confidence.")
+    if not _is_safe_relative_file(candidate.get("file")) or type(line) is not int or line < 1:
+        raise ValueError("Report contains invalid candidate file/line metadata.")
+
+    evidence = candidate.get("evidence")
+    if not isinstance(evidence, list) or len(evidence) < 3:
+        raise ValueError("Report candidate requires at least three evidence records.")
+    for item in evidence:
+        if not isinstance(item, dict):
+            raise ValueError("Report contains a malformed evidence record.")
+        evidence_line = item.get("line")
+        if not _is_safe_relative_file(item.get("file")) or type(evidence_line) is not int or evidence_line < 1:
+            raise ValueError("Report contains invalid evidence file/line metadata.")
+        for field in ("kind", "detail"):
+            value = item.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"Report evidence {field} is missing or invalid.")
+        if not isinstance(item.get("excerpt"), str):
+            raise ValueError("Report evidence excerpt is missing or invalid.")
+
+
+def _validated_hosted_repository_source(report: dict[str, object]) -> str | None:
+    repository = report.get("repository")
+    generated_at = report.get("generatedAt")
+    if repository is None and generated_at is None:
+        return None
+    if not isinstance(repository, dict) or set(repository) != {"source"}:
+        raise ValueError("Hosted report repository metadata is missing or invalid.")
+    source = repository.get("source")
+    if not isinstance(source, str) or HOSTED_REPOSITORY_RE.fullmatch(source) is None:
+        raise ValueError("Hosted report repository.source is not a canonical GitHub URL.")
+    if not isinstance(generated_at, str):
+        raise ValueError("Hosted report generatedAt is missing or invalid.")
+    try:
+        parsed = datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise ValueError("Hosted report generatedAt is not an ISO-8601 timestamp.") from error
+    if parsed.tzinfo is None:
+        raise ValueError("Hosted report generatedAt must include a timezone.")
+    return source
+
+
 def _validated_finalized_tells(report: dict[str, object]) -> list[dict[str, object]]:
     scan_result = report.get("scan")
     review_result = report.get("review")
@@ -1480,6 +1596,8 @@ def _validated_finalized_tells(report: dict[str, object]) -> list[dict[str, obje
     ):
         raise ValueError("Report is not a completed, finalized ats-1 report.")
     candidate_objects = [item for item in candidates if isinstance(item, dict)]
+    for candidate in candidate_objects:
+        _validate_candidate_core(candidate)
     if candidate_set_digest(candidate_objects) != report.get("candidateSetDigest"):
         raise ValueError("Finalized report candidate digest is inconsistent.")
     candidate_ids = [item.get("candidateId") for item in candidate_objects]
@@ -1551,25 +1669,9 @@ def validate_final_report(report: dict[str, object]) -> None:
         not isinstance(item, str) or not item.strip() for item in limitations
     ):
         raise ValueError("Report limitations are missing or invalid.")
+    _validated_hosted_repository_source(report)
 
     confirmed = _validated_finalized_tells(report)
-    for candidate in report.get("candidates", []):
-        if not isinstance(candidate, dict):
-            raise ValueError("Report contains a malformed candidate.")
-        relative_file = candidate.get("file")
-        line = candidate.get("line")
-        evidence = candidate.get("evidence")
-        if (
-            not isinstance(relative_file, str)
-            or not relative_file
-            or Path(relative_file).is_absolute()
-            or ".." in Path(relative_file).parts
-            or not isinstance(line, int)
-            or line < 1
-            or not isinstance(evidence, list)
-            or len(evidence) < 3
-        ):
-            raise ValueError("Report contains invalid candidate evidence metadata.")
     if len(confirmed) != report["summary"]["confirmedCount"]:
         raise ValueError("Report confirmed count is inconsistent.")
 
@@ -1597,6 +1699,12 @@ def _rescan_summary(
         "version"
     ) != current_tool.get("version"):
         raise ValueError("Baseline and current report tool versions do not match.")
+    baseline_repository = _validated_hosted_repository_source(baseline)
+    current_repository = _validated_hosted_repository_source(current)
+    if baseline_repository != current_repository:
+        raise ValueError(
+            "Baseline and current hosted repository.source values do not match."
+        )
     old = {_tell_key(item): item for item in baseline_tells if isinstance(item, dict)}
     new = {_tell_key(item): item for item in current_tells}
     return {
@@ -1649,6 +1757,7 @@ def finalize(
         result = json.loads(json.dumps(candidate_report))
         if baseline is not None:
             result["rescan"] = _rescan_summary(baseline, result)
+        validate_final_report(result)
         return result
 
     candidate_by_id: dict[str, dict[str, object]] = {}
@@ -1657,6 +1766,11 @@ def finalize(
             candidate.get("candidateId"), str
         ):
             raise ValueError("Candidate report contains an invalid candidate.")
+        _validate_candidate_core(candidate)
+        if candidate["candidateId"] in candidate_by_id:
+            raise ValueError(
+                f"Candidate report contains duplicate identity {candidate['candidateId']}."
+            )
         candidate_by_id[candidate["candidateId"]] = candidate
     decision_by_id: dict[str, dict[str, object]] = {}
     for decision in decisions:
@@ -1723,6 +1837,7 @@ def finalize(
 
     if baseline is not None:
         result["rescan"] = _rescan_summary(baseline, result)
+    validate_final_report(result)
     return result
 
 

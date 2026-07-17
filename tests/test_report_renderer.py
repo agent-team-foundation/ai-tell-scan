@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import copy
+import io
 import json
 import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -21,7 +24,14 @@ from ats_core import (  # noqa: E402
     scan,
     validate_final_report,
 )
+from checkout_public_repo import (  # noqa: E402
+    BlobEntry,
+    _git_blob_oid,
+    _materialize_archive,
+    select_entries,
+)
 from render_report import render, report_key  # noqa: E402
+from publish_report import publish  # noqa: E402
 
 
 def positive_report() -> dict[str, object]:
@@ -152,6 +162,137 @@ class ReportRendererTests(unittest.TestCase):
             second = subprocess.run(command, capture_output=True, text=True, check=False)
             self.assertEqual(second.returncode, 2)
             self.assertIn("overwrite existing", second.stderr)
+
+    def test_publisher_checks_identity_and_uploads_json_before_html(self) -> None:
+        report = positive_report()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report_path = root / "report.json"
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            completed = [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    json.dumps(
+                        {
+                            "visibility": "PUBLIC",
+                            "url": "https://github.com/acme/interface",
+                        }
+                    ),
+                    "",
+                ),
+                subprocess.CompletedProcess(["aws", "json"], 0, "", ""),
+                subprocess.CompletedProcess(["aws", "html"], 0, "", ""),
+            ]
+            with patch("publish_report.subprocess.run", side_effect=completed) as run:
+                url = publish(report_path, root)
+
+            key = report_key(report)
+            self.assertEqual(url, f"https://report.first-tree.ai/{key}.html")
+            self.assertEqual(run.call_count, 3)
+            commands = [call.args[0] for call in run.call_args_list]
+            self.assertEqual(commands[0][:4], ["gh", "repo", "view", "https://github.com/acme/interface"])
+            self.assertEqual(commands[1][4], f"s3://first-tree-report/{key}.json")
+            self.assertEqual(commands[2][4], f"s3://first-tree-report/{key}.html")
+
+    def test_publisher_never_reaches_html_upload_after_json_failure(self) -> None:
+        report = positive_report()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report_path = root / "report.json"
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            completed = [
+                subprocess.CompletedProcess(
+                    ["gh"],
+                    0,
+                    json.dumps(
+                        {
+                            "visibility": "PUBLIC",
+                            "url": "https://github.com/acme/interface",
+                        }
+                    ),
+                    "",
+                ),
+                subprocess.CompletedProcess(["aws", "json"], 1, "", "denied"),
+            ]
+            with patch("publish_report.subprocess.run", side_effect=completed) as run:
+                with self.assertRaisesRegex(ValueError, "not publishing a URL"):
+                    publish(report_path, root)
+            self.assertEqual(run.call_count, 2)
+
+    def test_publishing_recipe_never_executes_target_relative_scripts(self) -> None:
+        publishing = (SKILL / "references" / "publishing.md").read_text(encoding="utf-8")
+        self.assertIn("<skill-dir>/scripts/publish_report.py", publishing)
+        self.assertNotIn("python3 -B scripts/", publishing)
+
+        skill = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("<skill-dir>/scripts/checkout_public_repo.py", skill)
+
+    def test_bounded_checkout_selects_only_eligible_source(self) -> None:
+        entries = [
+            BlobEntry("a" * 40, 20, "package.json"),
+            BlobEntry("b" * 40, 30, "src/App.tsx"),
+            BlobEntry("c" * 40, 30, "node_modules/pkg/index.ts"),
+            BlobEntry("d" * 40, 30, "src/App.test.tsx"),
+            BlobEntry("e" * 40, 1_000_001, "src/Huge.tsx"),
+            BlobEntry("f" * 40, 10, "../escape.tsx"),
+        ]
+        self.assertEqual(
+            [entry.path for entry in select_entries(entries)],
+            ["package.json", "src/App.tsx"],
+        )
+
+        with patch("checkout_public_repo.MAX_FILES", 1):
+            with self.assertRaisesRegex(ValueError, "Source file limit exceeded"):
+                select_entries(entries[:2])
+
+    def test_bounded_archive_materializes_only_verified_selected_blobs(self) -> None:
+        selected_content = b"export const App = () => <main />;\n"
+        ignored_content = b"not source"
+        entry = BlobEntry(
+            _git_blob_oid(selected_content), len(selected_content), "src/App.tsx"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "source.tar.gz"
+            output = root / "output"
+            output.mkdir()
+            with tarfile.open(archive, "w:gz") as package:
+                for name, content in (
+                    ("owner-repo-commit/src/App.tsx", selected_content),
+                    ("owner-repo-commit/assets/large.bin", ignored_content),
+                ):
+                    member = tarfile.TarInfo(name)
+                    member.size = len(content)
+                    package.addfile(member, io.BytesIO(content))
+
+            _materialize_archive(archive, output, [entry])
+
+            self.assertEqual((output / "src" / "App.tsx").read_bytes(), selected_content)
+            self.assertFalse((output / "assets" / "large.bin").exists())
+
+    def test_bounded_archive_rejects_metadata_mismatch_and_unsafe_paths(self) -> None:
+        content = b"export default 1;\n"
+        entry = BlobEntry("0" * 40, len(content), "src/App.tsx")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "source.tar.gz"
+            output = root / "output"
+            output.mkdir()
+            with tarfile.open(archive, "w:gz") as package:
+                member = tarfile.TarInfo("owner-repo-commit/src/App.tsx")
+                member.size = len(content)
+                package.addfile(member, io.BytesIO(content))
+            with self.assertRaisesRegex(ValueError, "does not match GitHub metadata"):
+                _materialize_archive(archive, output, [entry])
+
+            unsafe_archive = root / "unsafe.tar.gz"
+            with tarfile.open(unsafe_archive, "w:gz") as package:
+                member = tarfile.TarInfo("../escape.tsx")
+                member.size = len(content)
+                package.addfile(member, io.BytesIO(content))
+            with self.assertRaisesRegex(ValueError, "unsafe path"):
+                _materialize_archive(unsafe_archive, root / "unused", [])
 
     def test_public_schema_declares_hosted_metadata(self) -> None:
         schema = json.loads((ROOT / "schemas" / "ats-1.schema.json").read_text())

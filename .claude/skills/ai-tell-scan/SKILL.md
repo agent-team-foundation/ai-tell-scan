@@ -39,10 +39,21 @@ python3 -B <skill-dir>/scripts/scan.py <repo-root> \
   --review-template <external-dir>/review.ats-review-1.json
 ```
 
-For the hosted campaign, materialize the public GitHub repository into a fresh
-temporary checkout without submodules or LFS smudge. Never run its setup,
-build, test, hook, or package commands. Pass the exact normalized public URL so
-the report carries the metadata required for hosted rendering:
+For the hosted campaign, first resolve `<skill-dir>` from this `SKILL.md`, then
+use the skill-owned bounded checkout helper. It verifies exact public GitHub
+identity, pins the current commit and tree metadata, downloads a capped archive,
+selects only bounded eligible source, verifies each Git blob digest, and writes
+inert non-executable files without invoking target filters or checkout hooks:
+
+```bash
+python3 -B <skill-dir>/scripts/checkout_public_repo.py \
+  https://github.com/<owner>/<repo> \
+  --workspace <fresh-external-dir>/checkout
+```
+
+Scan `<fresh-external-dir>/checkout/repository`. Never run the target's setup,
+build, test, hook, package, or policy commands. Pass the exact normalized public
+URL so the report carries the metadata required for hosted rendering:
 
 ```bash
 python3 -B <skill-dir>/scripts/scan.py <repo-root> \
@@ -54,7 +65,10 @@ python3 -B <skill-dir>/scripts/scan.py <repo-root> \
 Do not add hosted metadata to an ordinary local or private scan.
 
 The scanner ignores dependency directories, build output, generated/minified
-files, tests, snapshots, stories, fixtures, symlinks, and files over 1 MB. In a
+files, tests, snapshots, stories, fixtures, symlinks, and files over 1 MB. It
+fails closed at 64 MiB or 1,000,000 lines of eligible source and caps indexed
+CSS blocks, UI elements, and candidates rather than retaining an unbounded
+repository in memory. In a
 monorepo it scopes each UI file to its nearest React/Next package, so a sibling
 React package cannot make Preact or plain-package source eligible. It reads
 literal JSX/HTML classes plus locally resolvable CSS class blocks. Do not widen
