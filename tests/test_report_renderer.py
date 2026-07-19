@@ -48,6 +48,42 @@ def positive_report() -> dict[str, object]:
     return report
 
 
+def reviewed_zero_report() -> dict[str, object]:
+    candidate = scan(SKILL / "evals" / "projects" / "react-01")
+    review = review_template(candidate, reviewer="renderer-test")
+    for decision in review["decisions"]:
+        decision["disposition"] = "rejected"
+        decision["rationale"] = "The visible fixture context does not confirm the tell."
+    report = finalize(candidate, review)
+    report["repository"] = {"source": "https://github.com/acme/interface"}
+    report["generatedAt"] = "2026-07-17T03:30:45Z"
+    return report
+
+
+def suppressed_report() -> dict[str, object]:
+    candidate = scan(SKILL / "evals" / "projects" / "react-01")
+    original = candidate["candidates"][0]
+    candidate["candidates"] = []
+    for index in range(5):
+        repeated = copy.deepcopy(original)
+        repeated["candidateId"] = f"ats-{index + 1:016x}"
+        repeated["line"] = int(original["line"]) + index
+        candidate["candidates"].append(repeated)
+    candidate["candidateSetDigest"] = candidate_set_digest(candidate["candidates"])
+    candidate["summary"]["candidateCount"] = 5
+    review = review_template(candidate, reviewer="renderer-test")
+    for decision in review["decisions"]:
+        decision["disposition"] = "confirmed"
+        decision["rationale"] = (
+            "The full visible fixture context confirms this composite treatment."
+        )
+    report = finalize(candidate, review)
+    report["repository"] = {"source": "https://github.com/acme/interface"}
+    report["generatedAt"] = "2026-07-17T03:30:45Z"
+    validate_final_report(report)
+    return report
+
+
 class ReportRendererTests(unittest.TestCase):
     def test_repository_entry_point_generates_hosted_candidate_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -127,6 +163,45 @@ class ReportRendererTests(unittest.TestCase):
         self.assertNotIn("<script>", rendered)
         self.assertIn("&lt;/style&gt;&lt;script&gt;", rendered)
         self.assertIn("Content-Security-Policy", rendered)
+        self.assertIn('class="skip-link"', rendered)
+        self.assertIn('class="action-rail"', rendered)
+        self.assertIn("Priority findings", rendered)
+        self.assertIn("Read the evidence before the label", rendered)
+        self.assertIn("Review with First Tree", rendered)
+        self.assertIn('class="hero has-findings"', rendered)
+        self.assertIn("Visible defaults confirmed", rendered)
+        self.assertIn("after source-context review", rendered)
+        self.assertIn('role="columnheader">Priority', rendered)
+        self.assertIn("overflow-wrap:anywhere", rendered)
+        self.assertNotIn("Share this report", rendered)
+
+        clean = json.loads(
+            (ROOT / "examples" / "first-tree-web" / "ats-1.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        clean_rendered = render(clean, report_key(clean))
+        self.assertIn('class="hero clean-result"', clean_rendered)
+        self.assertIn("after deterministic source scan", clean_rendered)
+        self.assertIn("No deterministic composite rule crossed", clean_rendered)
+        self.assertIn("No source-context review was required", clean_rendered)
+        self.assertIn("Keep visible defaults intentional", clean_rendered)
+        self.assertNotIn("turn confirmed tells into scoped fixes", clean_rendered)
+        self.assertIn('aria-colspan="5"', clean_rendered)
+
+        reviewed_zero = reviewed_zero_report()
+        reviewed_zero_rendered = render(reviewed_zero, report_key(reviewed_zero))
+        self.assertIn("0 confirmed tells after source-context review", reviewed_zero_rendered)
+        self.assertIn("Source-context review rejected every candidate", reviewed_zero_rendered)
+        self.assertIn("All candidates were rejected", reviewed_zero_rendered)
+        self.assertNotIn("turn confirmed tells into scoped fixes", reviewed_zero_rendered)
+
+        suppressed = suppressed_report()
+        suppressed_rendered = render(suppressed, report_key(suppressed))
+        self.assertIn("5 confirmed tells", suppressed_rendered)
+        self.assertIn("Showing 3 reported findings from 5 confirmed", suppressed_rendered)
+        self.assertIn("--accent:#8f2f08", suppressed_rendered)
+        self.assertIn("--acid:#3f5200", suppressed_rendered)
 
     def test_report_key_rejects_noncanonical_or_private_style_sources(self) -> None:
         for source in (
